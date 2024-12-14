@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        #chat-log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px; }
+        #online-clients { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    <div id="online-clients">Online: <span id="clients-count">0</span></div>
+    <div id="chat-log"></div>
+    <input type="text" id="message-input" placeholder="Type a message">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8888/ws");
+
+        ws.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket Error: ", error);
+        };
+
+        ws.onclose = () => {
+            console.log("WebSocket connection closed.");
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "message") {
+                // Обработка новых сообщений
+                const chatLog = document.getElementById("chat-log");
+                chatLog.innerHTML += `<p><strong>${data.sender}:</strong> ${data.message}</p>`;
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+
+            if (data.type === "clients") {
+                // Обработка обновления количества клиентов
+                const clientCount = document.getElementById("clients-count");
+                clientCount.textContent = data.count;
+            }
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("message-input");
+            if (input.value) {
+                const message = { message: input.value };
+                console.log("Sending message: ", message);
+                ws.send(JSON.stringify(message));
+                input.value = "";
+            }
+        }
+    </script>
+</body>
+</html>
